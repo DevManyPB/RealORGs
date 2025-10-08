@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Gestión</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1><i class="fas fa-users"></i> Sistema de Gestión de Equipos</h1>
+                <div class="header-actions">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Buscar personas...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <button class="btn-primary" onclick="viewAllScores()">
+                        <i class="fas fa-calendar-alt"></i> Ver por Fecha
+                    </button>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="add-person-section">
+            <h2><i class="fas fa-user-plus"></i> Agregar Nueva Persona</h2>
+            <form id="personForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre:</label>
+                        <input type="text" id="nombre" placeholder="Nombre completo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rango">Rango:</label>
+                        <select id="rango" required>
+                            <option value="">Selecciona un rango</option>
+                            <option value="ORGs-T">ORGs-T</option>
+                            <option value="ORGs">ORGs</option>
+                            <option value="Sub.ORGs">Sub.ORGs</option>
+                            <option value="Lid.ORGs">Lid.ORGs</option>
+                            <option value="Aux.ORGs">Aux.ORGs</option>
+                            <option value="ADM">ADM</option>
+                            <option value="Resp.ORGs">Resp.ORGs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha de Ingreso:</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Persona
+                </button>
+            </form>
+        </section>
+
+        <section class="people-table-section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Lista de Personas</h2>
+                <div class="filters">
+                    <select id="filterRango">
+                        <option value="">Todos los rangos</option>
+                        <option value="ORGs-T">ORGs-T</option>
+                        <option value="ORGs">ORGs</option>
+                        <option value="Sub.ORGs">Sub.ORGs</option>
+                        <option value="Lid.ORGs">Lid.ORGs</option>
+                        <option value="Aux.ORGs">Aux.ORGs</option>
+                        <option value="ADM">ADM</option>
+                        <option value="Resp.ORGs">Resp.ORGs</option>
+                    </select>
+                    <select id="filterStatus">
+                        <option value="">Todos los estados</option>
+                        <option value="excelente">Excelente</option>
+                        <option value="bueno">Bueno</option>
+                        <option value="regular">Regular</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalPeople">0</h3>
+                    <p>Personas Registradas</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="avgScore">0.00</h3>
+                    <p>Promedio General</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalScores">0</h3>
+                    <p>Calificaciones Hoy</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="peopleTable">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Rango</th>
+                            <th>Fecha Ingreso</th>
+                            <th>Promedio</th>
+                            <th>Estado</th>
+                            <th>Advertencias</th>
+                            <th>Última Calificación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="peopleTableBody">
+                        <!-- Los datos se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+                <div id="noResults" class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>No se encontraron personas</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal para agregar calificación diaria -->
+    <div id="dailyScoreModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-calendar-day"></i> Calificación Diaria</h2>
+                <span class="close" onclick="closeDailyScoreModal()">&times;</span>
+            </div>
+            <form id="dailyScoreForm">
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dailyScorePerson">Persona:</label>
+                            <input type="text" id="dailyScorePerson" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="dailyScoreFecha">Fecha:</label>
+                            <input type="date" id="dailyScoreFecha" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qualifications-section">
+                    <h3>Calificaciones del Día (1-10)</h3>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyMentorias">Mentorías Realizadas (20%):</label>
+                        <input type="number" id="dailyMentorias" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyAlineamiento">Alineamiento (15%):</label>
+                        <input type="number" id="dailyAlineamiento" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyRetencion">Retención (15%):</label>
+                        <input type="number" id="dailyRetencion" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyEntrega">Entrega de Fac (15%):</label>
+                        <input type="number" id="dailyEntrega" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyReclutamiento">Reclutamiento (15%):</label>
+                        <input type="number" id="dailyReclutamiento" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyRetirar">Retirar Set (10%):</label>
+                        <input type="number" id="dailyRetirar" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="qualification-group">
+                        <label for="dailyEventos">Eventos (10%):</label>
+                        <input type="number" id="dailyEventos" min="1" max="10" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeDailyScoreModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar Calificación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver historial de calificaciones -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-history"></i> Historial de Calificaciones</h2>
+                <span class="close" onclick="closeHistoryModal()">&times;</span>
+            </div>
+            <div class="history-content">
+                <div id="historyList">
+                    <!-- Las calificaciones se cargarán aquí -->
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeHistoryModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver todas las calificaciones por fecha -->
+    <div id="allScoresModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-calendar-alt"></i> Calificaciones por Fecha</h2>
+                <span class="close" onclick="closeAllScoresModal()">&times;</span>
+            </div>
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="scoreDateFilter">Seleccionar Fecha:</label>
+                        <select id="scoreDateFilter">
+                            <!-- Las fechas se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="scores-table-container">
+                <table id="scoresTable">
+                    <thead>
+                        <tr>
+                            <th>Persona</th>
+                            <th>Rango</th>
+                            <th>Mentorías</th>
+                            <th>Alineamiento</th>
+                            <th>Retención</th>
+                            <th>Entrega</th>
+                            <th>Reclutamiento</th>
+                            <th>Retirar Set</th>
+                            <th>Eventos</th>
+                            <th>Promedio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoresTableBody">
+                        <!-- Los datos se cargarán aquí -->
+                    </tbody>
+                </table>
+                <div id="noScoresResults" class="no-results">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No hay calificaciones para esta fecha</p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeAllScoresModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 id="confirmTitle">Confirmar acción</h3>
+            <p id="confirmMessage">¿Estás seguro de que quieres realizar esta acción?</p>
+            <div class="modal-actions">
+                <button id="confirmCancel" class="btn-secondary">Cancelar</button>
+                <button id="confirmOk" class="btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="advertenciaModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-exclamation-triangle"></i> Agregar Advertencia</h2>
+            <span class="close" onclick="closeAdvertenciaModal()">&times;</span>
+        </div>
+        <form id="advertenciaForm">
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="advertenciaPerson">Persona:</label>
+                        <input type="text" id="advertenciaPerson" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="advertenciaFecha">Fecha:</label>
+                        <input type="date" id="advertenciaFecha" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="advertenciaMotivo">Motivo de la advertencia:</label>
+                    <textarea id="advertenciaMotivo" rows="4" placeholder="Describe el motivo de la advertencia..." required></textarea>
+                </div>
+                <div class="advertencia-info">
+                    <div class="advertencia-count">
+                        <span id="currentAdvertencias">0</span> / 3 advertencias activas
+                    </div>
+                    <div class="advertencia-alert" id="advertenciaMaxAlert" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        ¡Máximo de advertencias alcanzado!
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeAdvertenciaModal()">Cancelar</button>
+                <button type="submit" class="btn-warning" id="advertenciaSubmit">
+                    <i class="fas fa-exclamation-triangle"></i> Agregar Advertencia
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- Modal para ver historial de advertencias -->
+    <div id="advertenciasHistoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-history"></i> Historial de Advertencias</h2>
+                <span class="close" onclick="closeAdvertenciasHistoryModal()">&times;</span>
+            </div>
+            <div class="history-content">
+                <div class="advertencia-stats">
+                    <div class="stat-badge warning">
+                        <span id="totalAdvertenciasActivas">0</span> Activas
+                    </div>
+                    <div class="stat-badge inactive">
+                        <span id="totalAdvertenciasInactivas">0</span> Inactivas
+                    </div>
+                </div>
+                <div id="advertenciasHistoryList">
+                    <!-- Las advertencias se cargarán aquí -->
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeAdvertenciasHistoryModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/database.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!db.currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            initDashboard();
+        });
+    </script>
+</body>
+</html>
